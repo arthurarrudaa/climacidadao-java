@@ -1,0 +1,12 @@
+Global Solution FIAP 2026/2 - Domain Driven Design Using Java
+Projeto: ClimaCidadao
+
+PREENCHER ANTES DA ENTREGA:
+- Nome completo / RM / turma: ______________________________
+- Nome completo / RM / turma: ______________________________
+- Nome completo / RM / turma: ______________________________
+- Nome completo / RM / turma: ______________________________
+- Nome completo / RM / turma: ______________________________
+
+API no Render (apos publicar): ______________________________
+Video nao listado (apos gravar): ____________________________

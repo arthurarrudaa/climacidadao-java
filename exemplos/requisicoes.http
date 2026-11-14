@@ -1,0 +1,104 @@
+### No IntelliJ, configure a API e execute uma requisicao de cada vez.
+@url = http://localhost:8080
+
+### 1. Cadastrar usuario (201 + Location)
+POST {{url}}/usuarios
+Content-Type: application/json
+
+{"nome":"Ana Silva","email":"ana.silva@example.com"}
+
+### 2. Listar usuarios (200)
+GET {{url}}/usuarios
+
+### 3. Buscar usuario (200, ou 404 se nao existe)
+GET {{url}}/usuarios/1
+
+### 4. Atualizar usuario (200)
+PUT {{url}}/usuarios/1
+Content-Type: application/json
+
+{"nome":"Ana Santos","email":"ana.santos@example.com"}
+
+### 5. Cadastrar favorito pela rota aninhada (201 + Location)
+POST {{url}}/usuarios/1/favoritos
+Content-Type: application/json
+
+{"cidade":"Sao Paulo"}
+
+### 6. Repetir este POST deve retornar 409
+POST {{url}}/usuarios/1/favoritos
+Content-Type: application/json
+
+{"cidade":"sao paulo"}
+
+### 7. Listar favoritos do usuario (200)
+GET {{url}}/usuarios/1/favoritos
+
+### 8. Cadastrar favorito pela rota simples (201 + Location)
+POST {{url}}/favoritos
+Content-Type: application/json
+
+{"usuarioId":1,"cidade":"Campinas"}
+
+### 9. Buscar favorito (200 ou 404)
+GET {{url}}/favoritos/1
+
+### 10. Listar todos os favoritos (200)
+GET {{url}}/favoritos
+
+### 11. Atualizar favorito (200)
+PUT {{url}}/favoritos/1
+Content-Type: application/json
+
+{"cidade":"Sorocaba"}
+
+### 12. Cadastrar pesquisa climatica (dataConsulta e preenchida pelo servidor)
+POST {{url}}/usuarios/1/pesquisas
+Content-Type: application/json
+
+{"cidade":"Sao Paulo","temperatura":25.5}
+
+### 13. Cadastrar pesquisa pela rota simples (201)
+POST {{url}}/pesquisas
+Content-Type: application/json
+
+{"usuarioId":1,"cidade":"Campinas","temperatura":22.3}
+
+### 14. Historico do usuario (200)
+GET {{url}}/usuarios/1/pesquisas
+
+### 15. Listar todas as pesquisas (200)
+GET {{url}}/pesquisas
+
+### 16. Buscar uma pesquisa (200 ou 404)
+GET {{url}}/pesquisas/1
+
+### 17. Atualizar pesquisa (preserva dataConsulta se omitida)
+PUT {{url}}/pesquisas/1
+Content-Type: application/json
+
+{"cidade":"Cotia","temperatura":20.7}
+
+### 18. Excluir pesquisa (204)
+DELETE {{url}}/pesquisas/1
+
+### 19. Excluir favorito (204)
+DELETE {{url}}/favoritos/1
+
+### 20. Excluir usuario (204 somente depois de apagar todos os filhos)
+DELETE {{url}}/usuarios/1
+
+### 21. Cadastro invalido -> 400
+POST {{url}}/usuarios
+Content-Type: application/json
+
+{"nome":"","email":"nao-e-email"}
+
+### 22. Id inexistente -> 404
+GET {{url}}/usuarios/999999
+
+### 23. Metodo nao permitido -> 405
+PATCH {{url}}/usuarios/1
+Content-Type: application/json
+
+{"nome":"Teste"}
