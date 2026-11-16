@@ -9,6 +9,9 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import java.net.URI;
 import java.util.Map;
 
@@ -71,6 +74,66 @@ public class ClimaController {
                 "umidade", dados.path("main").path("humidity").asInt(),
                 "vento", dados.path("wind").path("speed").asDouble(),
                 "descricao", dados.path("weather").path(0).path("description").asText()
+        );
+    }
+
+    @GetMapping("/previsao")
+    public Map<String, Object> consultarPrevisao(
+            @RequestParam String cidade) {
+
+        if (cidade.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Informe uma cidade.");
+        }
+
+        URI endereco = UriComponentsBuilder
+                .fromUriString("https://api.openweathermap.org/data/2.5/forecast")
+                .queryParam("q", cidade.trim())
+                .queryParam("appid", apiKey)
+                .queryParam("units", "metric")
+                .queryParam("lang", "pt_br")
+                .encode()
+                .build()
+                .toUri();
+
+        JsonNode dados;
+
+        try {
+            dados = cliente.get()
+                    .uri(endereco)
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (RestClientException e) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Nao foi possivel consultar a previsao.");
+        }
+
+        if (dados == null || !dados.path("list").isArray()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Resposta de previsao invalida.");
+        }
+
+        List<Map<String, Object>> previsoes = new ArrayList<>();
+
+        for (JsonNode item : dados.path("list")) {
+            previsoes.add(Map.of(
+                    "horarioUtc", item.path("dt").asLong(),
+                    "temperatura", item.path("main").path("temp").asDouble(),
+                    "descricao", item.path("weather")
+                            .path(0).path("description").asText(),
+                    "probabilidadeChuva",
+                    Math.round(item.path("pop").asDouble() * 100),
+                    "vento", item.path("wind").path("speed").asDouble()
+            ));
+        }
+
+        return Map.of(
+                "cidade", dados.path("city").path("name").asText(),
+                "fusoHorarioSegundos",
+                dados.path("city").path("timezone").asInt(),
+                "previsoes", previsoes
         );
     }
 }
