@@ -19,7 +19,7 @@ CREATE TABLE tb_favorito (
     nm_cidade   VARCHAR2(100 CHAR) NOT NULL,
     CONSTRAINT pk_tb_favorito PRIMARY KEY (cd_favorito),
     CONSTRAINT fk_favorito_usuario FOREIGN KEY (cd_usuario)
-        REFERENCES tb_usuario (cd_usuario)
+    REFERENCES tb_usuario (cd_usuario)
 );
 
 -- Impede cidade repetida para o mesmo usuario (independente de espacos/caixa).
@@ -34,10 +34,22 @@ CREATE TABLE tb_pesquisa (
     dt_consulta    TIMESTAMP NOT NULL,
     CONSTRAINT pk_tb_pesquisa PRIMARY KEY (cd_pesquisa),
     CONSTRAINT fk_pesquisa_usuario FOREIGN KEY (cd_usuario)
-        REFERENCES tb_usuario (cd_usuario),
+    REFERENCES tb_usuario (cd_usuario),
     CONSTRAINT ck_pesquisa_temperatura CHECK (vl_temperatura BETWEEN -100 AND 70)
 );
 
+
+-- Mensagens enviadas pelo formulário de contato do React.
+-- Esta tabela não tem relação 1:N com usuario: contatos são independentes.
+CREATE TABLE tb_contato (
+    cd_contato NUMBER(10) NOT NULL,
+    nm_contato VARCHAR2(100 CHAR) NOT NULL,
+    ds_email VARCHAR2(150 CHAR) NOT NULL,
+    ds_mensagem VARCHAR2(500 CHAR) NOT NULL,
+    CONSTRAINT pk_tb_contato PRIMARY KEY (cd_contato)
+);
+
+CREATE SEQUENCE sq_tb_contato START WITH 1 INCREMENT BY 1 NOCYCLE;
 CREATE SEQUENCE sq_tb_usuario START WITH 1 INCREMENT BY 1 NOCYCLE;
 CREATE SEQUENCE sq_tb_favorito START WITH 1 INCREMENT BY 1 NOCYCLE;
 CREATE SEQUENCE sq_tb_pesquisa START WITH 1 INCREMENT BY 1 NOCYCLE;
