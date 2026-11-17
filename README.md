@@ -493,3 +493,48 @@ Antes da entrega definitiva, ainda é necessário executar os testes finais, con
 O ChatGPT foi utilizado como ferramenta de apoio na elaboração inicial, revisão e documentação de partes do projeto.
 
 A equipe é responsável por compreender, validar, testar e apresentar todo o código desenvolvido.
+
+
+## CRUD de Contatos
+
+O sistema permite cadastrar mensagens de contato e gerenciá-las
+por meio de endpoints REST conectados ao banco Oracle.
+
+| Método | Endpoint | Acesso | Sucesso |
+|---|---|---|---|
+| POST | `/contatos` | Público | 201 Created |
+| GET | `/contatos` | Administrador | 200 OK |
+| GET | `/contatos/{id}` | Administrador | 200 OK |
+| PUT | `/contatos/{id}` | Administrador | 200 OK |
+| DELETE | `/contatos/{id}` | Administrador | 204 No Content |
+
+### Segurança administrativa
+
+As operações de consulta, atualização e exclusão exigem
+o cabeçalho HTTP `X-Admin-Key`.
+
+A chave válida é configurada pela variável de ambiente
+`CONTATOS_ADMIN_KEY`, sem armazenar seu valor no código-fonte.
+
+Requisições sem autorização recebem `403 Forbidden`.
+
+O cadastro público de contatos não exige chave administrativa.
+
+### Exemplo de cadastro
+
+POST `/contatos`
+
+```json
+{
+  "nome": "Usuario Teste",
+  "email": "usuario@example.com",
+  "mensagem": "Gostaria de saber mais sobre o ClimaCidadao."
+}
+```
+
+Possíveis respostas:
+- `201 Created`: contato cadastrado.
+- `400 Bad Request`: dados inválidos.
+- `403 Forbidden`: acesso administrativo não autorizado.
+- `404 Not Found`: contato não encontrado.
+
