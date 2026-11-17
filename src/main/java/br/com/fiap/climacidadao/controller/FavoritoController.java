@@ -31,10 +31,7 @@ public class FavoritoController {
 
     @PostMapping("/favoritos")
     public ResponseEntity<FavoritoSaidaDTO> cadastrar(@Valid @RequestBody FavoritoEntradaDTO entrada) {
-        validarUsuario(entrada.getUsuarioId());
-        Favorito favorito = mapper.map(entrada, Favorito.class);
-        favorito.setCidade(favorito.getCidade().trim());
-        verificarDuplicado(favorito.getUsuarioId(), favorito.getCidade(), -1);
+        Favorito favorito = preparar(entrada, -1);
         favoritoDao.criar(favorito);
         return ResponseEntity.created(URI.create("/favoritos/" + favorito.getId()))
                 .body(mapper.map(favorito, FavoritoSaidaDTO.class));
@@ -43,7 +40,9 @@ public class FavoritoController {
     @PostMapping("/usuarios/{usuarioId}/favoritos")
     public ResponseEntity<FavoritoSaidaDTO> cadastrarParaUsuario(
             @PathVariable long usuarioId, @Valid @RequestBody FavoritoEntradaDTO entrada) {
-        conferirUsuarioDaRota(usuarioId, entrada.getUsuarioId());
+        if (entrada.getUsuarioId() != null && entrada.getUsuarioId() != usuarioId) {
+            throw new RequisicaoInvalidaException("O usuarioId do corpo difere do usuarioId da rota.");
+        }
         entrada.setUsuarioId(usuarioId);
         return cadastrar(entrada);
     }
@@ -70,11 +69,8 @@ public class FavoritoController {
         if (entrada.getUsuarioId() == null) {
             entrada.setUsuarioId(anterior.getUsuarioId());
         }
-        validarUsuario(entrada.getUsuarioId());
-        Favorito favorito = mapper.map(entrada, Favorito.class);
+        Favorito favorito = preparar(entrada, id);
         favorito.setId(id);
-        favorito.setCidade(favorito.getCidade().trim());
-        verificarDuplicado(favorito.getUsuarioId(), favorito.getCidade(), id);
         if (!favoritoDao.atualizar(favorito)) {
             throw new RecursoNaoEncontradoException("Favorito nao encontrado.");
         }
@@ -89,24 +85,23 @@ public class FavoritoController {
         return ResponseEntity.noContent().build();
     }
 
+    // As regras de cadastro e atualizacao ficam em um so lugar.
+    private Favorito preparar(FavoritoEntradaDTO entrada, long idIgnorado) {
+        validarUsuario(entrada.getUsuarioId());
+        Favorito favorito = mapper.map(entrada, Favorito.class);
+        favorito.setCidade(favorito.getCidade().trim());
+        if (favoritoDao.existeDuplicado(favorito.getUsuarioId(), favorito.getCidade(), idIgnorado)) {
+            throw new ConflitoException("Esta cidade ja esta nos favoritos do usuario.");
+        }
+        return favorito;
+    }
+
     private void validarUsuario(Long usuarioId) {
         if (usuarioId == null || usuarioId <= 0) {
             throw new RequisicaoInvalidaException("Informe um usuarioId positivo.");
         }
         if (usuarioDao.buscarPorId(usuarioId) == null) {
             throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-    }
-
-    private void conferirUsuarioDaRota(long usuarioId, Long usuarioIdDoCorpo) {
-        if (usuarioIdDoCorpo != null && usuarioIdDoCorpo != usuarioId) {
-            throw new RequisicaoInvalidaException("O usuarioId do corpo difere do usuarioId da rota.");
-        }
-    }
-
-    private void verificarDuplicado(long usuarioId, String cidade, long idIgnorado) {
-        if (favoritoDao.existeDuplicado(usuarioId, cidade, idIgnorado)) {
-            throw new ConflitoException("Esta cidade ja esta nos favoritos do usuario.");
         }
     }
 
@@ -119,10 +114,10 @@ public class FavoritoController {
     }
 
     private List<FavoritoSaidaDTO> converterLista(List<Favorito> favoritos) {
-        List<FavoritoSaidaDTO> saida = new ArrayList<>();
+        List<FavoritoSaidaDTO> resultado = new ArrayList<>();
         for (Favorito favorito : favoritos) {
-            saida.add(mapper.map(favorito, FavoritoSaidaDTO.class));
+            resultado.add(mapper.map(favorito, FavoritoSaidaDTO.class));
         }
-        return saida;
+        return resultado;
     }
 }

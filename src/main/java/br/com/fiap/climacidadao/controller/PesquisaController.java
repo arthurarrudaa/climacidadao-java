@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -31,12 +30,7 @@ public class PesquisaController {
 
     @PostMapping("/pesquisas")
     public ResponseEntity<PesquisaSaidaDTO> cadastrar(@Valid @RequestBody PesquisaEntradaDTO entrada) {
-        validarUsuario(entrada.getUsuarioId());
-        Pesquisa pesquisa = mapper.map(entrada, Pesquisa.class);
-        pesquisa.setCidade(pesquisa.getCidade().trim());
-        if (pesquisa.getDataConsulta() == null) {
-            pesquisa.setDataConsulta(LocalDateTime.now());
-        }
+        Pesquisa pesquisa = prepararPesquisa(entrada, null);
         pesquisaDao.criar(pesquisa);
         return ResponseEntity.created(URI.create("/pesquisas/" + pesquisa.getId()))
                 .body(mapper.map(pesquisa, PesquisaSaidaDTO.class));
@@ -45,7 +39,9 @@ public class PesquisaController {
     @PostMapping("/usuarios/{usuarioId}/pesquisas")
     public ResponseEntity<PesquisaSaidaDTO> cadastrarParaUsuario(
             @PathVariable long usuarioId, @Valid @RequestBody PesquisaEntradaDTO entrada) {
-        conferirUsuarioDaRota(usuarioId, entrada.getUsuarioId());
+        if (entrada.getUsuarioId() != null && entrada.getUsuarioId() != usuarioId) {
+            throw new RequisicaoInvalidaException("O usuarioId do corpo difere do usuarioId da rota.");
+        }
         entrada.setUsuarioId(usuarioId);
         return cadastrar(entrada);
     }
@@ -68,17 +64,7 @@ public class PesquisaController {
 
     @PutMapping("/pesquisas/{id}")
     public PesquisaSaidaDTO atualizar(@PathVariable long id, @Valid @RequestBody PesquisaEntradaDTO entrada) {
-        Pesquisa anterior = buscarPesquisa(id);
-        if (entrada.getUsuarioId() == null) {
-            entrada.setUsuarioId(anterior.getUsuarioId());
-        }
-        validarUsuario(entrada.getUsuarioId());
-        Pesquisa pesquisa = mapper.map(entrada, Pesquisa.class);
-        pesquisa.setId(id);
-        pesquisa.setCidade(pesquisa.getCidade().trim());
-        if (pesquisa.getDataConsulta() == null) {
-            pesquisa.setDataConsulta(anterior.getDataConsulta());
-        }
+        Pesquisa pesquisa = prepararPesquisa(entrada, buscarPesquisa(id));
         if (!pesquisaDao.atualizar(pesquisa)) {
             throw new RecursoNaoEncontradoException("Pesquisa nao encontrada.");
         }
@@ -93,18 +79,29 @@ public class PesquisaController {
         return ResponseEntity.noContent().build();
     }
 
+    // Prepara os dados tanto para cadastro quanto para atualizacao.
+    private Pesquisa prepararPesquisa(PesquisaEntradaDTO entrada, Pesquisa anterior) {
+        if (anterior != null && entrada.getUsuarioId() == null) {
+            entrada.setUsuarioId(anterior.getUsuarioId());
+        }
+        validarUsuario(entrada.getUsuarioId());
+        Pesquisa pesquisa = mapper.map(entrada, Pesquisa.class);
+        pesquisa.setCidade(pesquisa.getCidade().trim());
+        if (pesquisa.getDataConsulta() == null) {
+            pesquisa.setDataConsulta(anterior == null ? LocalDateTime.now() : anterior.getDataConsulta());
+        }
+        if (anterior != null) {
+            pesquisa.setId(anterior.getId());
+        }
+        return pesquisa;
+    }
+
     private void validarUsuario(Long usuarioId) {
         if (usuarioId == null || usuarioId <= 0) {
             throw new RequisicaoInvalidaException("Informe um usuarioId positivo.");
         }
         if (usuarioDao.buscarPorId(usuarioId) == null) {
             throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-    }
-
-    private void conferirUsuarioDaRota(long usuarioId, Long usuarioIdDoCorpo) {
-        if (usuarioIdDoCorpo != null && usuarioIdDoCorpo != usuarioId) {
-            throw new RequisicaoInvalidaException("O usuarioId do corpo difere do usuarioId da rota.");
         }
     }
 
@@ -117,10 +114,8 @@ public class PesquisaController {
     }
 
     private List<PesquisaSaidaDTO> converterLista(List<Pesquisa> pesquisas) {
-        List<PesquisaSaidaDTO> saida = new ArrayList<>();
-        for (Pesquisa pesquisa : pesquisas) {
-            saida.add(mapper.map(pesquisa, PesquisaSaidaDTO.class));
-        }
-        return saida;
+        return pesquisas.stream()
+                .map(pesquisa -> mapper.map(pesquisa, PesquisaSaidaDTO.class))
+                .toList();
     }
 }

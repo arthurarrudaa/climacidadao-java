@@ -1,12 +1,9 @@
-
 package br.com.fiap.climacidadao.handler;
 
 import br.com.fiap.climacidadao.exception.ConflitoException;
 import br.com.fiap.climacidadao.exception.RecursoNaoEncontradoException;
 import br.com.fiap.climacidadao.exception.RequisicaoInvalidaException;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -26,132 +23,80 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Erros das regras de negócio.
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> naoEncontrado(
-            RecursoNaoEncontradoException e,
-            HttpServletRequest requisicao) {
-
-        return erro(HttpStatus.NOT_FOUND, e.getMessage(), requisicao);
+            RecursoNaoEncontradoException e, HttpServletRequest req) {
+        return erro(HttpStatus.NOT_FOUND, e.getMessage(), req);
     }
 
     @ExceptionHandler(ConflitoException.class)
     public ResponseEntity<Map<String, Object>> conflito(
-            ConflitoException e,
-            HttpServletRequest requisicao) {
-
-        return erro(HttpStatus.CONFLICT, e.getMessage(), requisicao);
+            ConflitoException e, HttpServletRequest req) {
+        return erro(HttpStatus.CONFLICT, e.getMessage(), req);
     }
 
     @ExceptionHandler(RequisicaoInvalidaException.class)
     public ResponseEntity<Map<String, Object>> invalida(
-            RequisicaoInvalidaException e,
-            HttpServletRequest requisicao) {
-
-        return erro(HttpStatus.BAD_REQUEST, e.getMessage(), requisicao);
+            RequisicaoInvalidaException e, HttpServletRequest req) {
+        return erro(HttpStatus.BAD_REQUEST, e.getMessage(), req);
     }
 
+    // Campos que não passaram pelas validações dos DTOs.
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> camposInvalidos(
-            MethodArgumentNotValidException e,
-            HttpServletRequest requisicao) {
-
-        String mensagem = "Dados invalidos.";
-
-        if (!e.getBindingResult().getFieldErrors().isEmpty()) {
-            var campo = e.getBindingResult().getFieldErrors().get(0);
-
-            mensagem = campo.getField() + ": "
-                    + campo.getDefaultMessage();
-        }
-
-        return erro(HttpStatus.BAD_REQUEST, mensagem, requisicao);
+            MethodArgumentNotValidException e, HttpServletRequest req) {
+        var campos = e.getBindingResult().getFieldErrors();
+        String mensagem = campos.isEmpty()
+                ? "Dados invalidos."
+                : campos.get(0).getField() + ": " + campos.get(0).getDefaultMessage();
+        return erro(HttpStatus.BAD_REQUEST, mensagem, req);
     }
 
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class
     })
-    public ResponseEntity<Map<String, Object>> formatoInvalido(
-            Exception e,
-            HttpServletRequest requisicao) {
-
-        return erro(
-                HttpStatus.BAD_REQUEST,
-                "JSON ou identificador invalido.",
-                requisicao
-        );
+    public ResponseEntity<Map<String, Object>> formatoInvalido(HttpServletRequest req) {
+        return erro(HttpStatus.BAD_REQUEST, "JSON ou identificador invalido.", req);
     }
 
-    @ExceptionHandler({
-            NoHandlerFoundException.class,
-            NoResourceFoundException.class
-    })
-    public ResponseEntity<Map<String, Object>> rotaInexistente(
-            Exception e,
-            HttpServletRequest requisicao) {
-
-        return erro(
-                HttpStatus.NOT_FOUND,
-                "Rota nao encontrada.",
-                requisicao
-        );
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<Map<String, Object>> rotaInexistente(HttpServletRequest req) {
+        return erro(HttpStatus.NOT_FOUND, "Rota nao encontrada.", req);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<Map<String, Object>> metodoInvalido(
-            HttpRequestMethodNotSupportedException e,
-            HttpServletRequest requisicao) {
-
-        return erro(
-                HttpStatus.METHOD_NOT_ALLOWED,
-                "Metodo HTTP nao permitido nesta rota.",
-                requisicao
-        );
+    public ResponseEntity<Map<String, Object>> metodoInvalido(HttpServletRequest req) {
+        return erro(HttpStatus.METHOD_NOT_ALLOWED, "Metodo HTTP nao permitido nesta rota.", req);
     }
 
-    // Preserva o status definido pelos controllers,
-    // inclusive o erro 502 do OpenWeatherMap.
+    // Respeita os status definidos pelos controllers, como 403 e 502.
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> statusPersonalizado(
-            ResponseStatusException e,
-            HttpServletRequest requisicao) {
-
-        HttpStatus status = HttpStatus.valueOf(
-                e.getStatusCode().value()
-        );
-
+            ResponseStatusException e, HttpServletRequest req) {
+        HttpStatus status = HttpStatus.valueOf(e.getStatusCode().value());
         String mensagem = e.getReason() != null
                 ? e.getReason()
                 : "Nao foi possivel processar a requisicao.";
-
-        return erro(status, mensagem, requisicao);
+        return erro(status, mensagem, req);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> inesperado(
-            Exception e,
-            HttpServletRequest requisicao) {
-
-        return erro(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "Erro interno. Tente novamente mais tarde.",
-                requisicao
-        );
+    public ResponseEntity<Map<String, Object>> inesperado(HttpServletRequest req) {
+        return erro(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Erro interno. Tente novamente mais tarde.", req);
     }
 
+    // Todas as respostas de erro têm os mesmos cinco campos JSON.
     private ResponseEntity<Map<String, Object>> erro(
-            HttpStatus status,
-            String mensagem,
-            HttpServletRequest requisicao) {
-
+            HttpStatus status, String mensagem, HttpServletRequest req) {
         Map<String, Object> corpo = new LinkedHashMap<>();
-
         corpo.put("dataHora", LocalDateTime.now().toString());
         corpo.put("status", status.value());
         corpo.put("erro", status.getReasonPhrase());
         corpo.put("mensagem", mensagem);
-        corpo.put("caminho", requisicao.getRequestURI());
-
+        corpo.put("caminho", req.getRequestURI());
         return ResponseEntity.status(status).body(corpo);
     }
 }

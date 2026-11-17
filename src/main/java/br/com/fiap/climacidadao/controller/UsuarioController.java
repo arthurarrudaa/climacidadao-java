@@ -27,33 +27,34 @@ public class UsuarioController {
 
     @PostMapping("/usuarios")
     public ResponseEntity<UsuarioSaidaDTO> cadastrar(@Valid @RequestBody UsuarioEntradaDTO entrada) {
-        Usuario usuario = mapper.map(entrada, Usuario.class);
-        normalizar(usuario);
+        Usuario usuario = preparar(entrada);
         usuarioDao.criar(usuario);
-        UsuarioSaidaDTO saida = mapper.map(usuario, UsuarioSaidaDTO.class);
-        return ResponseEntity.created(URI.create("/usuarios/" + usuario.getId())).body(saida);
+        return ResponseEntity.created(URI.create("/usuarios/" + usuario.getId()))
+                .body(mapper.map(usuario, UsuarioSaidaDTO.class));
     }
 
     @GetMapping("/usuarios")
     public List<UsuarioSaidaDTO> listar() {
-        List<UsuarioSaidaDTO> saida = new ArrayList<>();
+        List<UsuarioSaidaDTO> resultado = new ArrayList<>();
         for (Usuario usuario : usuarioDao.listar()) {
-            saida.add(mapper.map(usuario, UsuarioSaidaDTO.class));
+            resultado.add(mapper.map(usuario, UsuarioSaidaDTO.class));
         }
-        return saida;
+        return resultado;
     }
 
     @GetMapping("/usuarios/{id}")
     public UsuarioSaidaDTO buscarPorId(@PathVariable long id) {
-        return mapper.map(buscarUsuario(id), UsuarioSaidaDTO.class);
+        Usuario usuario = usuarioDao.buscarPorId(id);
+        if (usuario == null) {
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
+        }
+        return mapper.map(usuario, UsuarioSaidaDTO.class);
     }
 
     @PutMapping("/usuarios/{id}")
     public UsuarioSaidaDTO atualizar(@PathVariable long id, @Valid @RequestBody UsuarioEntradaDTO entrada) {
-        buscarUsuario(id);
-        Usuario usuario = mapper.map(entrada, Usuario.class);
+        Usuario usuario = preparar(entrada);
         usuario.setId(id);
-        normalizar(usuario);
         if (!usuarioDao.atualizar(usuario)) {
             throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
@@ -65,20 +66,14 @@ public class UsuarioController {
         if (!usuarioDao.excluir(id)) {
             throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
-        // O banco impede excluir um usuario que ainda possui filhos (409).
         return ResponseEntity.noContent().build();
     }
 
-    private Usuario buscarUsuario(long id) {
-        Usuario usuario = usuarioDao.buscarPorId(id);
-        if (usuario == null) {
-            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
-        }
-        return usuario;
-    }
-
-    private void normalizar(Usuario usuario) {
+    // Prepara os dados tanto para cadastrar quanto para atualizar.
+    private Usuario preparar(UsuarioEntradaDTO entrada) {
+        Usuario usuario = mapper.map(entrada, Usuario.class);
         usuario.setNome(usuario.getNome().trim());
         usuario.setEmail(usuario.getEmail().trim().toLowerCase(Locale.ROOT));
+        return usuario;
     }
 }
