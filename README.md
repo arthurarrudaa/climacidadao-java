@@ -462,7 +462,7 @@ Não devem ser incluídas no ZIP as pastas `target`, `.git` ou `.idea`, nem arqu
 
 O arquivo PDF está localizado em:
 
-`docs/ClimaCidadao_Documentacao_Tecnica_2026.pdf`
+`docs/doc-java-citizentech.pdf`
 
 A documentação apresenta:
 
@@ -486,7 +486,7 @@ O vídeo deverá demonstrar o funcionamento do frontend integrado à API Java, i
 
 A API Java está desenvolvida e publicada no Render. A integração com o React e o OpenWeatherMap foi implementada e testada.
 
-Antes da entrega definitiva, ainda é necessário executar os testes finais, conferir a documentação e adicionar o link do vídeo.
+O vídeo de apresentação está publicado no YouTube e a documentação técnica está disponível na pasta docs.
 
 ## 13. Utilização de inteligência artificial
 

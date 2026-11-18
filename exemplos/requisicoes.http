@@ -1,5 +1,5 @@
 ### No IntelliJ, configure a API e execute uma requisicao de cada vez.
-@url = http://localhost:8080
+@url = http://localhost:8081
 
 ### 1. Cadastrar usuario (201 + Location)
 POST {{url}}/usuarios

@@ -1,5 +1,5 @@
 // Exemplos para o React (Vite). Nao e um front-end completo.
-const API_URL = "http://localhost:8080";
+const API_URL = "http://localhost:8081";
 
 // GET: listar usuarios
 export async function listarUsuarios() {
