@@ -16,7 +16,7 @@ API desenvolvida para a solução **CitizenTech** da FIAP. O backend mantém dad
 
 **Repositório React:** https://github.com/enzoestanguera/Global_Solution
 
-**Vídeo de demonstração (YouTube não listado, até 5 minutos):** PENDENTE — inserir o link antes da entrega.
+**Vídeo de demonstração (YouTube não listado, até 5 minutos):** https://youtu.be/fm0ddH3zXUk.
 
 ## 1. Objetivo e funcionalidades
 
@@ -478,7 +478,7 @@ A documentação apresenta:
 
 ### Vídeo de demonstração
 
-**Link:** PENDENTE — inserir o endereço do vídeo antes da entrega.
+https://youtu.be/fm0ddH3zXUk
 
 O vídeo deverá demonstrar o funcionamento do frontend integrado à API Java, incluindo consultas e operações de escrita.
 
